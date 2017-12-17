@@ -1622,7 +1622,7 @@ module Mail
     #  mail.attachments[0]                #=> Mail::Part (first attachment)
     #
     def attachments
-      parts.attachments
+      parts.attachments(generate_attachment_part_from_body)
     end
 
     def has_attachments?
@@ -2134,6 +2134,19 @@ module Mail
 
     def decode_body_as_text
       Encodings.transcode_charset decode_body, charset, 'UTF-8'
+    end
+
+    def generate_attachment_part_from_body
+      return unless !multipart? && attachment? && !instance_of?(Mail::Part)
+      part = Mail::Part.new(nil)
+      header_part = []
+      header_part << header[:content_type].encoded if header[:content_type]
+      header_part << header[:content_disposition].encoded if header[:content_disposition]
+      header_part << header[:content_transfer_encoding].encoded if header[:content_transfer_encoding]
+      header_part << header[:content_description].encoded if header[:content_description]
+      part.header = header_part.join
+      part.body = @body.encoded unless @body.nil?
+      part
     end
   end
 end
